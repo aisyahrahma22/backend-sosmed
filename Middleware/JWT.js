@@ -14,6 +14,7 @@ const jwtVerify = (req, res, next) => {
            if(err) throw err 
            
            req.dataToken = dataToken
+           console.log('ini jwt verify',req.dataToken)
 
            next()
         } catch (error) {
