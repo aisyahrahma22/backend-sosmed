@@ -5,31 +5,60 @@ const { uploader } = require('../Helpers/Uploader')
 const fs = require('fs')
 
 module.exports = {
-    // getPosts: (req, res) => {
-    //     try {
-    //         let id = req.dataToken.id
+    getAllPost: (req,res) => {   
+        var sql =`SELECT p.*, u.username, u.profileimage
+                    FROM posts p 
+                    JOIN users u 
+                    ON p.userId = u.id 
+                    ORDER BY p.id DESC;`;
+        db.query(sql, (err,results) => {
+            if(err) {
+                // console.log(err)
+                return res.status(500).send(err)
+            }
     
-    //         const sqlQuery = 'SELECT * FROM posts WHERE userId = ?'
+            res.status(200).send(results)
+        })
+    },
+    getAllPostByUserId : (req,res) => {
+        let id = req.dataToken.id
+        var postId = req.params.id;
+        var sql = `SELECT * from posts where id = ${postId};`;
+        var sql =`SELECT p.*, u.username, u.profileimage
+                    FROM posts p 
+                    JOIN users u 
+                    ON p.userId = u.id
+                    WHERE userId = ${id}
+                    ORDER BY p.id DESC;`;
+        console.log('ini req params id', postId)
+        console.log('ini req', req)
+        db.query(sql, (err,results) => {
+            if(err) {
+                // console.log(err)
+                return res.status(500).send(err)
+            }
     
-    //         db.query(sqlQuery, id, (err, result) => {
-    //             try {
-    //                 if(err) throw err 
+            res.status(200).send(results)
+        })
+    },
+    getAllPostExplore : (req,res) => {
+        let id = req.dataToken.id
+        var postId = req.params.id;
+        var sql =`SELECT p.*, u.username, u.profileimage
+                    FROM posts p 
+                    JOIN users u 
+                    ON p.userId = u.id 
+                    WHERE userId <> ${id}
+                    ORDER BY p.id DESC;`;
+        db.query(sql, (err,results) => {
+            if(err) {
+                // console.log(err)
+                return res.status(500).send(err)
+            }
     
-    //                 res.status(200).send({
-    //                     status: 200,
-    //                     error: false, 
-    //                     message: 'Get Data Success!',
-    //                     data: result
-    //                 })
-    //             } catch (error) {
-    //                 console.log(error)
-    //             }
-    //         })
-    //     } catch (error) {
-    //         console.log(error)
-    //     }
-    // },
-
+            res.status(200).send(results)
+        })
+    },
     getPosts: (req,res) => {
         let id = req.dataToken.id
         var sql = `Select * from posts where userId = ${id};`;

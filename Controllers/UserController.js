@@ -2,6 +2,7 @@
 const db = require('./../Connection/Connection');
 const util = require('util')
 const query = util.promisify(db.query).bind(db)
+const { uploader } = require('../Helpers/Uploader')
 
 // Import Validator
 const validator = require('validator')
@@ -350,5 +351,65 @@ module.exports = {
                 console.log(error)                
             }
         })
+    },
+    editProfileData: (req,res) => {
+        var data = req.body;
+        let id = req.dataToken.id 
+        var sql = `UPDATE users SET ? WHERE id = ${id}`
+           
+        db.query(sql, data, (err, results) => {
+            if(err) {
+                return res.status(500).send(err)
+            }
+    
+            res.status(200).send({ ...req.user, ...data })
+        })
+    },
+    editProfileImage: (req,res) => {
+
+        console.log('ini req paling atas', req)
+        const path = '/users';
+        const id = req.dataToken.id 
+        const upload = uploader(path, 'USER').fields([{ name: 'image' }]);
+        upload(req, res, (err) => {
+            if(err){
+                return res.status(500).send({ message: 'Upload file failed !', error: err.message });
+            }
+
+            const { image } = req.files;
+            console.log(image)
+            const data = { profileimage: `${path}/${image[0].filename}` }
+            console.log('ini data', data)
+
+            var sql = `UPDATE users SET ? WHERE id = ${id}`
+           
+            db.query(sql, data, (err, results) => {
+                if(err) {
+                    fs.unlinkSync('./Public' + path + '/' + image[0].filename)
+                    return res.status(500).send(err)
+                }
+
+                console.log('ini err habis fs',err)
+
+                if(req.user.profileimage !== '/default/default.jpg') {
+                    fs.unlinkSync('./Public' + req.user.profileimage)
+                }
+                
+                console.log('ini req.user.profileimage',req.user.profileimage)
+
+                sql = `SELECT u.id,u.username, u.displayname, u.profileimage,u.bio
+                        FROM users u
+                        WHERE u.id = ${id}`;
+                console.log('ini sql bawah', sql)
+                db.query(sql, (err, results) => {
+                    if(err) {
+                        return res.status(500).send(err)
+                        
+                    }
+                    console.log('ini err bawah', err)
+                    res.status(200).send({ ...results[0], token: req.token })
+                })
+            })
+        })  
     }
 }

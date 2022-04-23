@@ -13,5 +13,7 @@ Router.patch('/confirmation', jwtVerify, UserController.confirmation)
 Router.post('/login', UserController.login)
 Router.post('/checkuserverify', jwtVerify, UserController.checkUserVerify)
 Router.post('/resend', jwtVerify, UserController.resend)
+Router.put('/editprofiledata',  jwtVerify, UserController.editProfileData)
+Router.put('/editprofileimage', jwtVerify, UserController.editProfileImage)
 
 module.exports = Router
