@@ -70,7 +70,7 @@ module.exports = {
     },
     addPost: (req,res) => {
         try {
-            const path = '/post/images'; //file save path
+            const path = 'Public/post/images'; //file save path
             const upload = uploader(path, 'POS').fields([{ name: 'image'}]); //uploader(path, 'default prefix')
             const id = req.dataToken.id
             upload(req, res, (err) => {
@@ -134,7 +134,7 @@ module.exports = {
                         return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err1.message });
                     }
     
-                    fs.unlinkSync('./Public' + results[0].image);
+                    fs.unlinkSync('' + results[0].image);
                     sql = `SELECT * from posts where userId=${id};`;
                     console.log('sql user id', sql)
                     db.query(sql, (err2,results2) => {
@@ -156,7 +156,7 @@ module.exports = {
             if(err) throw err;
     
             if(results.length > 0) {
-                const path = '/post/images'; //file save path
+                const path = 'Public/post/images'; //file save path
                 const upload = uploader(path, 'POS').fields([{ name: 'image'}]); //uploader(path, 'default prefix')
     
                 upload(req, res, (err) => {
@@ -178,12 +178,12 @@ module.exports = {
                         db.query(sql,data, (err1,results1) => {
                             if(err1) {
                                 if(imagePath) {
-                                    fs.unlinkSync('./Public' + imagePath);
+                                    fs.unlinkSync('' + imagePath);
                                 }
                                 return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err1.message });
                             }
                             if(imagePath) {
-                                fs.unlinkSync('./Public' + results[0].image);
+                                fs.unlinkSync('' + results[0].image);
                             }
                             sql = `Select * from posts where userId=${id};`;
                             db.query(sql, (err2,results2) => {

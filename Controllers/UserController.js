@@ -28,13 +28,25 @@ module.exports = {
             // Step2. Validasi
             if(!data.username || !data.email || !data.password) throw { message: 'Data Not Completed!' }
             if(!validator.isEmail(data.email)) throw { message: 'Email Invalid' }
-            // if(data.password.length > 10) throw { message: 'Password Maximum 10 Character' }
+            if(data.password.length > 50) throw { message: 'Password Maximum 50 Character' }
 
             // Step3. Hashing Password
             const hmac = crypto.createHmac('sha256', 'abc123')
             await hmac.update(data.password)
             const passwordHashed = await hmac.digest('hex')
             data.password = passwordHashed
+            data.profileimage = '/default/default.jpg'
+
+            // Step4.1. Validasi, apakah usernamenya sudah ter-register?
+            let query01 = 'SELECT * FROM users WHERE username = ?'
+            const findUsername = await query(query01, data.username)
+            .catch((error) => {
+                throw error
+            })
+
+            if(findUsername.length > 0){
+                throw { message: 'Username Already Register!' }
+            }
 
             // Step4.1. Validasi, apakah emailnya sudah ter-register?
             let query1 = 'SELECT * FROM users WHERE email = ?'
@@ -197,66 +209,198 @@ module.exports = {
         }
     },
 
-    login: (req, res) => {
-        try {
-            const data = req.body 
+    // login: async(req, res) => {
+    //     try {
+    //         // Step1. Get All Data
+    //         let data = req.body
 
-            if(!data.email || !data.password) throw { message: 'Data Not Complete!' }
+    //         console.log('req data login', data)
+    //         // Step3. Hashing Password
+    //         const hmac = crypto.createHmac('sha256', 'abc123')
+    //         await hmac.update(data.password)
+    //         const passwordHashed = await hmac.digest('hex')
+    //         data.password = passwordHashed
 
-            const hmac = crypto.createHmac('sha256', 'abc123')
-            hmac.update(data.password)
-            const passwordHashed = hmac.digest('hex')
-            data.password = passwordHashed
+    //          // Step4.1. Validasi, apakah passwordnya benar atau tidak
+    //          let query02 = 'SELECT * FROM users WHERE password = ?'
+    //          console.log('ini query 02',query02)
+    //          const findPassword = await query(query02, data.password)
+    //          console.log('ini find Password',findPassword)
+    //         //  .catch((error) => {
+    //         //      throw error
+    //         //  })
 
-            db.query('SELECT * FROM users WHERE email = ? AND password = ?', [data.email, data.password], (err, result) => {
-                try {
-                    if(err) throw error 
+    //          if(findPassword.length === 0){
+    //             throw { message: 'Wrong Password!' }
+    //         }
 
-                    if(result.length === 1){
-                        jwt.sign({id: result[0].id}, '123abc', (err, token) => {
-                            try {
-                                if(err) throw err
+    //         // Step4.3. Store ke Db
+    //         let query2 = `SELECT * FROM users WHERE email = ${findPassword[0].email} OR username = ${findPassword[0].username} AND password = ${data.password}`
+    //         console.log('ini query select all', query2)
+    //         const insertUser = await query(query2, data)
+    //         console.log('ini insert user', insertUser)
+    //         .catch((error) => {
+    //             throw error
+    //         })
 
-                                db.query('UPDATE users SET token = ?', token, (err1, result1) => {
-                                    try {
-                                        if(err1) throw err1 
+    //         jwt.sign({id: insertUser.insertId}, '123abc', (err, token) => {
+    //             try {
+    //                 if(err) throw err
 
-                                        res.status(200).send({
-                                            error: false, 
-                                            message: 'Login Success',
-                                            token: token
-                                        })
-                                    } catch (error) {
-                                        console.log(error)
-                                    }
-                                })
-                            } catch (error) {
-                                res.status(500).send({
-                                    error: true, 
-                                    message: error.message
-                                })
-                            }
-                        })
-                    }else{
-                        res.status(200).send({
-                            error: true, 
-                            message: 'Account Not Found!'
-                        })
-                    }
-                } catch (error) {
-                    res.status(500).send({
-                        error: true, 
-                        message: error.message
-                    })
-                }
+    //                 // Step5.0. Save Token to Db
+    //                 let query3 = 'UPDATE users SET token = ? WHERE id = ?'
+    //                 db.query(query3, [token, insertUser.insertId], (err1, result1) => {
+    //                     try {
+    //                         if(err1) throw err1
+
+    //                         res.status(200).send({
+    //                             error: false, 
+    //                             message: 'Login Success',
+    //                             token: token
+    //                         })
+                          
+    //                     } catch (error) {
+    //                         res.status(500).send({
+    //                             error: true, 
+    //                             message: error.message
+    //                         })
+    //                     }
+    //                 })
+    //             } catch (error) {
+    //                 res.status(500).send({
+    //                     error: true, 
+    //                     message: error.message
+    //                 })
+    //             }
+    //         })
+    //     } catch (error) {
+    //         res.status(500).send({
+    //             error: true, 
+    //             message: error.message
+    //         })
+    //     }
+    // },
+
+    // loginUser : (user,password,res)
+  login: (req, res) => {
+    let {  account, password } = req.body;
+    console.log(  {  account, password } )
+
+    // Hash the password
+    password = crypto.createHmac('sha256', 'abc123')
+    .update(password)
+    .digest("hex");
+
+    //GET Query
+    let getUserQuery = `select * from users where (email = ${db.escape(
+       account
+    )} or username = ${db.escape( account)}) and password = ${db.escape(
+      password
+    )}`;
+
+    // Getting data on database
+    db.query(getUserQuery, (err, result) => {
+      if (err) {
+        res.status(404).send({
+          message: err,
+        });
+      }
+    
+      if (result.length === 1) {
+       jwt.sign({id: result[0].id}, '123abc', (err, token) => {
+           try {
+            if(err) throw err
+            db.query('UPDATE users SET token = ?', token, (err1, result1) => {
+               try {
+                if(err1) throw err1 
+
+                res.status(200).send({
+                    error: false, 
+                    message: 'Login Success',
+                    token: token
+                })
+               } catch (error) {
+                console.log(error)
+               }
             })
-        } catch (error) {
-            res.status(500).send({
-                error: true, 
-                message: error.message
-            })
-        }
-    },
+               
+           } catch (error) {
+            console.log(error)
+           }
+       })
+       
+      } else {
+        res.status(200).send({
+            error: true, 
+            message:  "Incorrect email/username or password",
+           
+        })
+      }
+    });
+  },
+
+    // login: (req, res) => {
+     
+    //     try {
+
+    //         const data = req.body 
+
+    //         if(!data.email || !data.password) throw { message: 'Data Not Complete!' }
+
+    //         const hmac = crypto.createHmac('sha256', 'abc123')
+    //         hmac.update(data.password)
+    //         const passwordHashed = hmac.digest('hex')
+    //         data.password = passwordHashed
+
+    //         db.query('SELECT * FROM users WHERE email = ? AND password = ?', [data.email, data.password], (err, result) => {
+    //             try {
+    //                 if(err) throw error 
+
+    //                 if(result.length === 1){
+    //                     jwt.sign({id: result[0].id}, '123abc', (err, token) => {
+    //                         try {
+    //                             if(err) throw err
+
+    //                             db.query('UPDATE users SET token = ?', token, (err1, result1) => {
+    //                                 try {
+    //                                     if(err1) throw err1 
+
+    //                                     res.status(200).send({
+    //                                         error: false, 
+    //                                         message: 'Login Success',
+    //                                         token: token
+    //                                     })
+    //                                 } catch (error) {
+    //                                     console.log(error)
+    //                                 }
+    //                             })
+    //                         } catch (error) {
+    //                             res.status(500).send({
+    //                                 error: true, 
+    //                                 message: error.message
+    //                             })
+    //                         }
+    //                     })
+    //                 }else{
+    //                     res.status(200).send({
+    //                         error: true, 
+    //                         message: 'Incorrect Password!'
+    //                     })
+    //                 }
+    //             } catch (error) {
+    //                 res.status(500).send({
+    //                     error: true, 
+    //                     message: error.message
+    //                 })
+    //             }
+    //         })
+    //     } catch (error) {
+    //         res.status(500).send({
+    //             error: true, 
+    //             message: error.message
+    //         })
+    //     }
+    // },
 
     checkUserVerify: (req, res) => {
         let id = req.dataToken.id
@@ -353,63 +497,119 @@ module.exports = {
         })
     },
     editProfileData: (req,res) => {
-        var data = req.body;
-        let id = req.dataToken.id 
-        var sql = `UPDATE users SET ? WHERE id = ${id}`
-           
-        db.query(sql, data, (err, results) => {
-            if(err) {
-                return res.status(500).send(err)
-            }
+        var id = req.dataToken.id
+        var sql = `SELECT * from users where id = ${id};`;
+        db.query(sql, (err, results) => {
+            if(err) throw err;
     
-            res.status(200).send({ ...req.user, ...data })
+            if(results.length > 0) {
+                const path = 'Public/users'; //file save path
+                const upload = uploader(path, 'USER').fields([{ name: 'image'}]); //uploader(path, 'default prefix')
+    
+                upload(req, res, (err) => {
+                    if(err){
+                        return res.status(500).json({ message: 'Upload profile picture failed !', error: err.message });
+                    }
+    
+                    const { image } = req.files;
+                    console.log('ini image',image)
+                    const imagePath = image ? path + '/' + image[0].filename : null;
+                    console.log('ini imagePath',imagePath)
+                    const data = JSON.parse(req.body.data);
+                    console.log('ini data',data)
+    
+                    try {
+                        if(imagePath) {
+                            data.profileimage = imagePath;
+                            
+                        }
+                        sql = `Update users set ? where id = ${id};`
+                        db.query(sql, data, (err1,results1) => {
+                            if(err1) {
+                                if(imagePath) {
+                                    fs.unlinkSync('' + imagePath);
+                                    console.log('ini fs.unlinkSync', fs.unlinkSync)
+                                }
+                                return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err1.message });
+                           
+                            }
+                            if(imagePath) {
+                                fs.unlinkSync('' + results[0].profileimage);
+                            }
+
+                            if(data.profileimage !== '/default/default.jpg') {
+                                fs.unlinkSync('' + data.profileimage)
+                            }
+
+                            sql = `SELECT u.id,u.username, u.displayname, u.profileimage,u.bio
+                            FROM users u
+                            WHERE u.id = ${id}`;
+                            db.query(sql, (err2,results2) => {
+                                if(err2) {
+                                    return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err1.message });
+                                }
+
+                                return res.status(200).send(results2);
+                            })
+                        })
+                    }
+                    catch(err){
+                        console.log(err.message)
+                        return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err.message });
+                    }
+                })
+            }
         })
     },
-    editProfileImage: (req,res) => {
+    // editProfileImage: (req,res) => {
+    //     var data = req.body;
+    //     console.log('ini data paling atas', data)
+    //     const path = 'Public/users';
+    //     const id = req.dataToken.id 
+    //     const upload = uploader(path, 'USER').fields([{ name: 'image' }]);
+    //     upload(req, res, (err) => {
+    //         if(err){
+    //             return res.status(500).send({ message: 'Upload file failed !', error: err.message });
+    //         }
 
-        console.log('ini req paling atas', req)
-        const path = '/users';
-        const id = req.dataToken.id 
-        const upload = uploader(path, 'USER').fields([{ name: 'image' }]);
-        upload(req, res, (err) => {
-            if(err){
-                return res.status(500).send({ message: 'Upload file failed !', error: err.message });
-            }
+    //         const { image } = req.files;
+    //         console.log(image)
+    //         const data = { profileimage: `${path}/${image[0].filename}` }
+    //         console.log('ini data', data)
 
-            const { image } = req.files;
-            console.log(image)
-            const data = { profileimage: `${path}/${image[0].filename}` }
-            console.log('ini data', data)
-
-            var sql = `UPDATE users SET ? WHERE id = ${id}`
+    //         var sql = `UPDATE users SET ? WHERE id = ${id}`
            
-            db.query(sql, data, (err, results) => {
-                if(err) {
-                    fs.unlinkSync('./Public' + path + '/' + image[0].filename)
-                    return res.status(500).send(err)
-                }
+    //         db.query(sql, data, (err, results) => {
+    //             if(err) {
+    //                 fs.unlinkSync('./Public' + path + '/' + image[0].filename)
+    //                 return res.status(500).send(err)
+    //             }
 
-                console.log('ini err habis fs',err)
+    //             console.log('ini err habis fs',err)
+    //             console.log(results)
 
-                if(req.user.profileimage !== '/default/default.jpg') {
-                    fs.unlinkSync('./Public' + req.user.profileimage)
-                }
-                
-                console.log('ini req.user.profileimage',req.user.profileimage)
-
-                sql = `SELECT u.id,u.username, u.displayname, u.profileimage,u.bio
-                        FROM users u
-                        WHERE u.id = ${id}`;
-                console.log('ini sql bawah', sql)
-                db.query(sql, (err, results) => {
-                    if(err) {
-                        return res.status(500).send(err)
+    //             sql = `SELECT u.id,u.username, u.displayname, u.profileimage,u.bio
+    //                     FROM users u
+    //                     WHERE u.id = ${id}`;
+    //             console.log('ini sql bawah', sql)
+    //             db.query(sql, (err, results) => {
+    //                 if(err) {
+    //                     return res.status(500).send(err)
                         
-                    }
-                    console.log('ini err bawah', err)
-                    res.status(200).send({ ...results[0], token: req.token })
-                })
-            })
-        })  
-    }
+    //                 }
+    //                 console.log('ini err bawah', err)
+    //                 res.status(200).send({ ...results[0], token: req.token })
+    //             })
+    //         })
+    //     })  
+    // },
+    getUsers: (req,res) => {
+        const id = req.dataToken.id 
+        var sql = `Select * from users where id = ${id};`;
+        db.query(sql, (err,result) => {
+            if(err) return res.status(500).send({ message: 'Error!', error: err})
+
+            return res.status(200).send(result)
+        })
+    },
 }

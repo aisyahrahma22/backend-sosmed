@@ -19,7 +19,7 @@ const db = require('./Connection/Connection')
 const PostRouters = require('./Routers/PostRouters')
 app.use('/post', PostRouters)
 
-app.use('/Public', express.static('Public')) // Memberikan akses ke client untuk mengambil assets image kita
+app.use('/Public/', express.static(__dirname + '/Public')) // Memberikan akses ke client untuk mengambil assets image kita
 
 const UserRouters = require('./Routers/UserRouter')
 app.use('/user', UserRouters)

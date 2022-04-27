@@ -5,11 +5,11 @@ var fs = require('fs');
 
 module.exports = {
     uploader(destination, fileNamePrefix){
-        let defaultPath = './Public';
+      
     
         const storage = multer.diskStorage({
             destination: (req, file, cb) => {
-                const dir = defaultPath + destination;
+                const dir =  destination;
                 if (fs.existsSync(dir)) {
                     console.log(dir, "exists")
                     cb(null, dir);
@@ -27,7 +27,7 @@ module.exports = {
         });
     
         const imageFilter = (req, file, callback) => {
-            const ext = /\.(jpg|jpeg|png)$/;
+            const ext = /\.(jpg|jpeg|png|JPEG|JPG)$/;
             if (!file.originalname.match(ext)) {
                 return callback(new Error('Only selected file type are allowed'), false);
             }
