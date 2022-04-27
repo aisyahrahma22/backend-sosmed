@@ -35,7 +35,7 @@ module.exports = {
             await hmac.update(data.password)
             const passwordHashed = await hmac.digest('hex')
             data.password = passwordHashed
-            data.profileimage = '/default/default.jpg'
+            data.profileimage = './Public/default/default.jpg'
 
             // Step4.1. Validasi, apakah usernamenya sudah ter-register?
             let query01 = 'SELECT * FROM users WHERE username = ?'
@@ -496,57 +496,115 @@ module.exports = {
             }
         })
     },
+    // editProfileData: (req,res) => {
+    //     var id = req.dataToken.id
+    //     var sql = `SELECT * from users where id = ${id};`;
+    //     db.query(sql, (err, results) => {
+    //         if(err) throw err;
+    
+    //         if(results.length > 0) {
+    //             const path = 'Public/users'; //file save path
+    //             const upload = uploader(path, 'USER').fields([{ name: 'image'}]); //uploader(path, 'default prefix')
+    
+    //             upload(req, res, (err) => {
+    //                 if(err){
+    //                     return res.status(500).json({ message: 'Upload profile picture failed !', error: err.message });
+    //                 }
+    
+    //                 const { image } = req.files;
+    //                 console.log('ini image',image)
+    //                 const imagePath = image ? path + '/' + image[0].filename : null;
+    //                 console.log('ini imagePath',imagePath)
+    //                 const data = JSON.parse(req.body.data);
+    //                 console.log('ini data',data)
+    
+    //                 try {
+    //                     if(imagePath) {
+    //                         data.profileimage = imagePath;
+                            
+    //                     }
+    //                     sql = `Update users set ? where id = ${id};`
+    //                     db.query(sql, data, (err1,results1) => {
+    //                         if(err1) {
+    //                             if(imagePath) {
+    //                                 fs.unlinkSync('' + imagePath);
+    //                                 console.log('ini fs.unlinkSync', fs.unlinkSync)
+    //                             }
+    //                             return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err1.message });
+                           
+    //                         }
+    //                         if(imagePath) {
+    //                             fs.unlinkSync('' + results[0].profileimage);
+    //                         }
+
+                            // if(data.profileimage !== '/default/default.jpg') {
+                            //     fs.unlinkSync('' + data.profileimage)
+                            // }
+
+    //                         sql = `SELECT u.id,u.username, u.displayname, u.profileimage,u.bio
+    //                         FROM users u
+    //                         WHERE u.id = ${id}`;
+    //                         db.query(sql, (err2,results2) => {
+    //                             if(err2) {
+    //                                 return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err1.message });
+    //                             }
+
+    //                             return res.status(200).send(results2);
+    //                         })
+    //                     })
+    //                 }
+    //                 catch(err){
+    //                     console.log(err.message)
+    //                     return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err.message });
+    //                 }
+    //             })
+    //         }
+    //     })
+    // },
     editProfileData: (req,res) => {
         var id = req.dataToken.id
-        var sql = `SELECT * from users where id = ${id};`;
+        var sql = `SELECT * from users where id = ${id}`
         db.query(sql, (err, results) => {
             if(err) throw err;
     
+            console.log(err)
+            console.log(results)
             if(results.length > 0) {
                 const path = 'Public/users'; //file save path
                 const upload = uploader(path, 'USER').fields([{ name: 'image'}]); //uploader(path, 'default prefix')
     
                 upload(req, res, (err) => {
                     if(err){
-                        return res.status(500).json({ message: 'Upload profile picture failed !', error: err.message });
+                        return res.status(500).json({ message: 'Upload post profile picture failed !', error: err.message });
                     }
-    
                     const { image } = req.files;
-                    console.log('ini image',image)
+                    console.log({ image })
                     const imagePath = image ? path + '/' + image[0].filename : null;
-                    console.log('ini imagePath',imagePath)
                     const data = JSON.parse(req.body.data);
-                    console.log('ini data',data)
+                    console.log(data)
     
                     try {
                         if(imagePath) {
-                            data.profileimage = imagePath;
-                            
+                            data.profileimage = imagePath;                        
                         }
                         sql = `Update users set ? where id = ${id};`
-                        db.query(sql, data, (err1,results1) => {
+                        db.query(sql,data, (err1,results1) => {
                             if(err1) {
                                 if(imagePath) {
                                     fs.unlinkSync('' + imagePath);
-                                    console.log('ini fs.unlinkSync', fs.unlinkSync)
                                 }
-                                return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err1.message });
-                           
+                                return res.status(500).json({ message: "Server Error", error: err1.message });
                             }
                             if(imagePath) {
                                 fs.unlinkSync('' + results[0].profileimage);
                             }
-
-                            if(data.profileimage !== '/default/default.jpg') {
-                                fs.unlinkSync('' + data.profileimage)
-                            }
-
+                            
                             sql = `SELECT u.id,u.username, u.displayname, u.profileimage,u.bio
-                            FROM users u
-                            WHERE u.id = ${id}`;
+                                    FROM users u
+                                    WHERE u.id = ${id}`;
                             db.query(sql, (err2,results2) => {
                                 if(err2) {
-                                    return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err1.message });
+                                    return res.status(500).json({ message: "Server Error", error: err1.message });
                                 }
 
                                 return res.status(200).send(results2);
@@ -555,54 +613,12 @@ module.exports = {
                     }
                     catch(err){
                         console.log(err.message)
-                        return res.status(500).json({ message: "There's an error on the server. Please contact the administrator.", error: err.message });
+                        return res.status(500).json({ message: "Server Error", error: err.message });
                     }
                 })
             }
         })
     },
-    // editProfileImage: (req,res) => {
-    //     var data = req.body;
-    //     console.log('ini data paling atas', data)
-    //     const path = 'Public/users';
-    //     const id = req.dataToken.id 
-    //     const upload = uploader(path, 'USER').fields([{ name: 'image' }]);
-    //     upload(req, res, (err) => {
-    //         if(err){
-    //             return res.status(500).send({ message: 'Upload file failed !', error: err.message });
-    //         }
-
-    //         const { image } = req.files;
-    //         console.log(image)
-    //         const data = { profileimage: `${path}/${image[0].filename}` }
-    //         console.log('ini data', data)
-
-    //         var sql = `UPDATE users SET ? WHERE id = ${id}`
-           
-    //         db.query(sql, data, (err, results) => {
-    //             if(err) {
-    //                 fs.unlinkSync('./Public' + path + '/' + image[0].filename)
-    //                 return res.status(500).send(err)
-    //             }
-
-    //             console.log('ini err habis fs',err)
-    //             console.log(results)
-
-    //             sql = `SELECT u.id,u.username, u.displayname, u.profileimage,u.bio
-    //                     FROM users u
-    //                     WHERE u.id = ${id}`;
-    //             console.log('ini sql bawah', sql)
-    //             db.query(sql, (err, results) => {
-    //                 if(err) {
-    //                     return res.status(500).send(err)
-                        
-    //                 }
-    //                 console.log('ini err bawah', err)
-    //                 res.status(200).send({ ...results[0], token: req.token })
-    //             })
-    //         })
-    //     })  
-    // },
     getUsers: (req,res) => {
         const id = req.dataToken.id 
         var sql = `Select * from users where id = ${id};`;
