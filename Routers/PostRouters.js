@@ -15,6 +15,9 @@ Router.put('/editpost/:id', jwtVerify, PostController.editPost)
 Router.get('/getall', jwtVerify, PostController.getAllPost)
 Router.get('/getallbyuserid', jwtVerify, PostController.getAllPostByUserId)
 Router.get('/getallexplore', jwtVerify, PostController.getAllPostExplore)
-
+Router.post('/likepost/:id', jwtVerify, PostController.likepost);
+Router.post('/addcomment/:id', jwtVerify, PostController.addComment)
+Router.put('/editcomment/:id', jwtVerify, PostController.editComment)
+Router.delete('/deletecomment/:id', jwtVerify, PostController.deleteComment)
 
 module.exports = Router
