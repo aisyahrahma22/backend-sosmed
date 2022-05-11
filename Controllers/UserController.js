@@ -263,7 +263,8 @@ module.exports = {
                     res.status(200).send({
                         error: false, 
                         message: 'Login Success',
-                        token: token
+                        token: token,
+                        id: result[0].id
                     })
                 } catch (error) {
                     console.log(error)
@@ -445,4 +446,37 @@ module.exports = {
             return res.status(200).send(result)
         })
     },
+    getProfileUser : (req,res) => {
+        // funtion untuk nampilin profile user lain ketika klik usernamenya
+        var userId = req.params.id;
+        var sql = `SELECT * FROM users where users.id = ${userId}`;
+        console.log('ini sql', sql)
+        db.query(sql, (err,results) => {
+            if(err) {
+                // console.log(err)
+                return res.status(500).send(err)
+            }
+           
+            var sql2 = `SELECT users.username, users.profileimage, users.bio, users.email, users.displayname, posts.image, posts.id as postId, posts.caption, posts.created_at
+                FROM users
+                JOIN posts
+                ON users.id = posts.userId 
+                WHERE users.id = ${userId}`;
+                console.log('ini sql', sql2)
+                db.query(sql2, (err2,results2) => {
+                    if(err2) {
+                        // console.log(err)
+                        return res.status(500).send(err2)
+                    }
+            
+                    res.status(200).send({
+                        results: results,
+                        results2 :results2,
+                    })
+                })
+    
+           
+        })
+       
+    }
 }

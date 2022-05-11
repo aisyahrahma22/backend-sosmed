@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')
 require('dotenv').config()
 
 const jwtVerify = (req, res, next) => {
+    console.log('Trrigger1')
     const token = req.headers.authorization
     console.log(token)
 
@@ -15,7 +16,7 @@ const jwtVerify = (req, res, next) => {
            
            req.dataToken = dataToken
            console.log('ini jwt verify',req.dataToken)
-
+            console.log('Trigger 2')
            next()
         } catch (error) {
             res.status(500).send({

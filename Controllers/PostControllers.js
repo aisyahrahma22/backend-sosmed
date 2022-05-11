@@ -5,26 +5,111 @@ const { uploader } = require('../Helpers/Uploader')
 const fs = require('fs')
 
 module.exports = {
-    getAllPost: (req,res) => {   
-        var sql =`SELECT p.*, u.username, u.profileimage, c.comment, count(l.userId) as totalLike
-                    FROM posts p 
-                    JOIN users u 
-                    ON p.userId = u.id 
-                    JOIN comment c 
-                    ON p.id = c.postId 
-                    JOIN likes l 
-                    ON p.id = l.postId 
-                    ORDER BY p.id DESC;`;
+    getData: (req, res) => {
+        let id = req.dataToken.id
+        var postId = req.params.id;
+        console.log('ini postId ', postId)
+        var getDataQuery =`SELECT p.*, u.username, u.profileimage, u.displayname, count(l.userId) as totalLike
+        FROM posts p 
+        JOIN users u 
+        ON p.userId = u.id 
+        LEFT JOIN likes l 
+        ON p.id = l.postId 
+        WHERE p.id = ${postId}`;
+    
+        db.query(getDataQuery, (err, results) => {
+          if (err) {
+            res.status(500).send(err);
+          }
+          var sql = `SELECT c.postId, c.userId, c.comment, u.username, c.created_at
+          FROM users u 
+          JOIN comment c
+          ON c.userId = u.id
+          WHERE c.postId = ${postId}`
+            db.query(sql, (err2,results2) => {
+                if(err2) {
+                    // console.log(err)
+                    return res.status(500).send(err2)
+                }
+
+                var sql3 = `SELECT l.userId, l.postId  
+                FROM users u 
+                JOIN likes l
+                ON l.userId = u.id
+                WHERE l.postId = ${postId} and l.userId = ${id}`
+                db.query(sql3, (err2,results3) => {
+                    if(err2) {
+                        // console.log(err)
+                        return res.status(500).send(err2)
+                    }
+                    var newArray = []
+                    for (let i = 0; i < results3.length; i++) {
+                        newArray.push(results3[i].postId)
+                    }
+            
+                    res.status(200).send({
+                        results: results,
+                        comment :results2,
+                        likes : newArray,
+                    })
+                })
+                // console.log(results2)
+                // var newArray = []
+                // for (let i = 0; i < results2.length; i++) {
+                //     newArray.push(
+                //         results2[i].userId, 
+                //         results2[i].comment, 
+                //         results2[i].username)
+                // }
+        
+                // res.status(200).send({
+                //     results: results,
+                //     results2 :results2
+                // })
+            })
+        });
+    },
+    getAllPost: (req,res) => { 
+    //   problem solve jangan rubah codingan ini
+        let id = req.dataToken.id
+        var postId = req.params.id;
+        var sql =`SELECT p.*, u.username, u.profileimage, count(l.userId) as totalLike
+        FROM posts p 
+        JOIN users u 
+        ON p.userId = u.id 
+        LEFT JOIN likes l 
+        ON p.id = l.postId 
+        GROUP BY p.id`;
         db.query(sql, (err,results) => {
             if(err) {
                 // console.log(err)
                 return res.status(500).send(err)
             }
-    
-            res.status(200).send(results)
+            
+            var sql = `SELECT l.postId 
+            FROM users u 
+            JOIN likes l
+            ON l.userId = u.id
+            WHERE l.userId = ${id}`
+            db.query(sql, (err2,results2) => {
+                if(err2) {
+                    // console.log(err)
+                    return res.status(500).send(err2)
+                }
+                var newArray = []
+                for (let i = 0; i < results2.length; i++) {
+                    newArray.push(results2[i].postId)
+                }
+        
+                res.status(200).send({
+                    results: results,
+                    results2 : newArray
+                })
+            })
         })
     },
     getAllPostByUserId : (req,res) => {
+        // function ini digunakan ketika nampilin post di profile
         let id = req.dataToken.id
         var postId = req.params.id;
         var sql = `SELECT * from posts where id = ${postId};`;
@@ -45,15 +130,13 @@ module.exports = {
             res.status(200).send(results)
         })
     },
-    getAllPostExplore : (req,res) => {
-        let id = req.dataToken.id
+    getAllPostById : (req,res) => {
+        // function ini berfungsi untuk menampilkan detail image
+        // belum bisa menampilkan comment dan like ketika detail di buka
         var postId = req.params.id;
-        var sql =`SELECT p.*, u.username, u.profileimage
-                    FROM posts p 
-                    JOIN users u 
-                    ON p.userId = u.id 
-                    WHERE userId <> ${id}
-                    ORDER BY p.id DESC;`;
+        var sql = `SELECT * from posts where id = ${postId};`;
+        console.log('ini req params id', postId)
+        console.log('ini req', req)
         db.query(sql, (err,results) => {
             if(err) {
                 // console.log(err)
@@ -61,15 +144,6 @@ module.exports = {
             }
     
             res.status(200).send(results)
-        })
-    },
-    getPosts: (req,res) => {
-        let id = req.dataToken.id
-        var sql = `Select * from posts where userId = ${id};`;
-        db.query(sql, (err,result) => {
-            if(err) return res.status(500).send({ message: 'Error!', error: err})
-
-            return res.status(200).send(result)
         })
     },
     addPost: (req,res) => {
@@ -208,43 +282,6 @@ module.exports = {
         })
     },
 
-    
-    // likepost: (req,res) => {
-    //     var postId = req.params.id;
-    //     console.log('ini postId', postId)
-    //     var sql = `SELECT * FROM posts INNER JOIN likes ON likes.postId = ? WHERE posts.id = ${postId} AND likes.userId = ${id}`;
-    //     console.log('ini sql atas', sql)
-    //     var id = req.dataToken.id
-    //     db.query(sql, (err, results) => {
-    //         if(err) {
-    //             console.log('err atas', err)
-    //             return res.status(500).json({ message: "Server Error", error: err.message });
-    //         }
-            
-    //         if(results.length) {
-    //             sql = `DELETE FROM likes WHERE postId = ${postId} AND userId = ${id}`
-    //             console.log('sql bawah', sql)
-    //             db.query(sql, (err1,results1) => {
-    //                 if(err1) {
-    //                     console.log('err1 bawah', err1)
-    //                     return res.status(500).json({ message: "Server Error", error: err1.message });
-    //                 }
-    
-    //                 fs.unlinkSync('' + results[0].image);
-    //                 sql = `INSERT INTO likes set ?`;
-    //                 console.log('sql user id', sql)
-    //                 db.query(sql, (err2,results2) => {
-    //                     if(err2) {
-    //                         console.log('err bawah2', err2)
-    //                         return res.status(500).json({ message: "Server Error", error: err2.message });
-    //                     }
-    //                     res.status(200).send(results2);
-    //                 })
-    //             })
-    //         }
-    //     })  
-    // },
-
     // 1. User login (id=47)
     // 2. Cek postId
     // 3. Jika ada, Cek userId
@@ -252,8 +289,8 @@ module.exports = {
     // 5. Dislike post 
     // 6. Count total like
 
-
     likepost: (req,res) => {
+        console.log('bebas')
         let totalLike;
         var postId = req.params.id;
         console.log('ini postId', postId)
@@ -261,9 +298,6 @@ module.exports = {
         console.log('ini sql atas', sql)
         var id = req.dataToken.id
         db.query(sql, (err, results) => {
-            
-        console.log('resul:', results.length)
-        console.log('results.id:', results[0].id)
             if(err) {
                 console.log('err atas', err)
                 return res.status(500).json({ message: "Server Error", error: err.message });
@@ -271,16 +305,16 @@ module.exports = {
             
             if(results.length > 0) {
                 // Cek userId sudah like post ??
-                sql = `SELECT * from likes where userId = ${id};`;
+                sql = `SELECT * from likes where userId = ${id} and postId = ${postId} `;
                 console.log('sql user id', sql)
                 db.query(sql, (err2,results2) => {
                     console.log('results2:', results2)
                     if(results2.length == 0) {
                         // Post like
-                        sql1 = `INSERT INTO likes (postId, userId)
+                        sql = `INSERT INTO likes (postId, userId)
                         VALUES (${results[0].id}, ${id});`
-                        console.log('sql1 bawah', sql1)
-                        db.query(sql1, (err1,results1) => {
+                        console.log('sql1 bawah', sql)
+                        db.query(sql, (err1,results1) => {
                             console.log('results:', results1)
                             if(err1) {
                                 console.log('err1 bawah', err1)
@@ -289,7 +323,7 @@ module.exports = {
                         })
                     } else {
                         // Delete like
-                        sql = `DELETE from likes where userId = ${id};`
+                        sql = `DELETE from likes where userId = ${id} and postId = ${postId}`
                         console.log('sql user id', sql)
                         db.query(sql, (err2,results2) => {
                             if(err2) {
@@ -324,7 +358,7 @@ module.exports = {
     addComment: (req,res) => {
         var {comment} = req.body;
         var postId = req.params.id;
-        console.log('ini comment',typeof comment)
+        var id = req.dataToken.id
         var sql = `SELECT * from posts where id = ${postId};`;
         console.log('ini sql atas', sql)
         var id = req.dataToken.id
