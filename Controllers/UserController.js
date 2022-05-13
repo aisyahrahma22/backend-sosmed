@@ -478,5 +478,213 @@ module.exports = {
            
         })
        
-    }
+    },
+
+    resendPassword: (req, res) => {
+
+        
+
+        let email =  req.body.email
+        console.log(email)
+
+        // Step0. Make sure bahwa id user itu ada
+        db.query('SELECT * FROM users WHERE email = ?', email, (err, result) => {
+            try {
+                if(err) throw err
+
+                console.log(err)
+                console.log(result)
+                if(result.length === 1){
+                    // Step1. Get Email dari user id tersebut 
+                    let email = result[0].email
+                    let displayname = result[0].displayname
+                    let id = result[0].id
+
+
+                    // Step2. Resend Email Confirmationnya
+                    jwt.sign({id: id}, '123abc', (err, token) => {
+                        try {
+                            if(err) throw err
+        
+                            // Step5.0. Save Token to Db
+                            let query3 = 'UPDATE users SET token = ? WHERE id = ?'
+                            db.query(query3, [token, id], (err1, result1) => {
+                                try {
+                                    if(err1) throw err1
+        
+                                    // Step5.1. Send Email Confirmation
+                                    fs.readFile('C:/My Apps/api-sosmed/Public/Template/index2.html', {
+                                        encoding: 'utf-8'}, (err, file) => {
+                                            if(err) throw err 
+        
+                                            const newTemplate = handlebars.compile(file)
+                                            const newTemplateResult = newTemplate({bebas: displayname, link:`http://localhost:3000/resetpassword/${token}`})
+        
+                                            transporter.sendMail({
+                                                from: 'myUniverse', // Sender Address 
+                                                to: 'ichajust2@gmail.com', // Email User
+                                                subject: 'Reset Password',
+                                                html: newTemplateResult
+                                            })
+                                            .then((response) => {
+                                                res.status(200).send({
+                                                    error: false, 
+                                                    message: 'Reset Password Success, Please Check You Email to Change it'
+                                                })
+                                            })
+                                            .catch((error) => {
+                                                res.status(500).send({
+                                                    error: false, 
+                                                    message: error.message
+                                                })
+                                            })
+                                    })
+                                } catch (error) {
+                                    res.status(500).send({
+                                        error: true, 
+                                        message: error.message
+                                    })
+                                }
+                            })
+                        } catch (error) {
+                            res.status(500).send({
+                                error: true, 
+                                message: error.message
+                            })
+                        }
+                    })
+                }else{
+                    // Kirim message error, bahwa id tidak ditemukan
+                }
+            } catch (error) {
+                console.log(error)                
+            }
+        })
+    },
+    // resetPassword: (req, res) => {
+    //     // let { password } = req.body;
+    //     // let id = req.dataToken.id 
+    //     // password = crypto.createHmac('sha256', 'abc123')
+    //     //   .update(password)
+    //     //   .digest("hex");
+    //     //    console.log(password);
+    
+    //     // let updateQuery = `UPDATE users set password='${password}' where id = '${id}';`;
+    //     // console.log(updateQuery);
+
+    //     // db.query(updateQuery, (err, result) => {
+    //     // if (err) res.status(500).send(err);
+            
+    //     // res.status(200).send(result);
+    //     // });
+
+    //     let { password } = req.body;
+    //         password = crypto.createHmac('sha256', 'abc123')
+    //       .update(password)
+    //       .digest("hex");
+    //        console.log({ password });
+
+    //     let sql1 = `SELECT * FROM users`
+    //     console.log('ini sql1', sql1)
+    //     // Step0. Make sure bahwa id user itu ada
+    //     db.query(sql1, (err, result) => {
+    //         try {
+    //             if(err) throw err
+
+    //             console.log('ini error', err)
+    //             console.log('ini result', result)
+    //             if(result.length === 1){
+    //                 // Step1. Get Email dari user id tersebut 
+                   
+    //                 // let id = result[0].id
+    //                 // console.log(id)
+
+
+    //                 // Step2. Resend Email Confirmationnya
+    //                 jwt.sign({id: id}, '123abc', (err, token) => {
+    //                     try {
+    //                         if(err) throw err
+        
+    //                         // Step5.0. Save Token to Db
+    //                         let query3 = `UPDATE users set password='${password}' where id = '${id}';`
+    //                         db.query(query3, (err1, result1) => {
+    //                             try {
+    //                                 if(err1) throw err1
+
+    //                                 let updateQuery = `SELECT * from users where id = '${id}';`;
+    //                                 console.log(updateQuery);
+
+    //                                 db.query(updateQuery, (err4, result4) => {
+    //                                 if (err4) res.status(500).send(err4);
+                                        
+    //                                 res.status(200).send(result4);
+    //                                 });
+        
+    //                             } catch (error) {
+    //                                 res.status(500).send({
+    //                                     error: true, 
+    //                                     message: error.message
+    //                                 })
+    //                             }
+    //                         })
+    //                     } catch (error) {
+    //                         res.status(500).send({
+    //                             error: true, 
+    //                             message: error.message
+    //                         })
+    //                     }
+    //                 })
+    //             }else{
+    //                 // Kirim message error, bahwa id tidak ditemukan
+    //             }
+    //         } catch (error) {
+    //             console.log(error)                
+    //         }
+    //     })
+    //   },
+   
+    resetPassword: (req, res) => {
+        //Hashing password
+        let { password } = req.body;
+        password = crypto.createHmac(
+            'sha256',
+          `${process.env.JWT_KEY}}`
+        )
+          .update(password)
+          .digest("hex");
+
+        console.log( password)
+    
+        //CHANGE USER PASSWORD
+        let updateQuery = `Update users set password = ${db.escape(
+          password
+        )} where email=${db.escape(req.body.userData.email)};`;
+
+        console.log(updateQuery)
+    
+        db.query(updateQuery, (err, results0) => {
+          if (err) res.status(500).send({ errMessage: "Update user data failed" });
+    
+          //GET UPDATED USER DATA
+          let selectQuery = `Select * from users where email=${db.escape(
+            req.body.userData.email
+          )};`;
+    
+          db.query(selectQuery, (err, results) => {
+            if (err) res.status(500).send({ errMessage: "Get user data failed" });
+    
+            if (results[0]) {
+              res.status(200).send({
+                dataLogin: results[0],
+                token,
+                message: "Change password success",
+              });
+            } else {
+              res.status(200).send({
+                errMessage: "Can't match user data",
+              });
+            }
+          });
+        });
+      }
 }

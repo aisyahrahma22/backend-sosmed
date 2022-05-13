@@ -14,6 +14,7 @@ Router.delete('/deletepost/:id', jwtVerify, PostController.deletePost)
 Router.put('/editpost/:id', jwtVerify, PostController.editPost)
 Router.get('/getall', jwtVerify, PostController.getAllPost)
 Router.get('/getallbyuserid', jwtVerify, PostController.getAllPostByUserId)
+Router.get('/getlikedpost', jwtVerify, PostController.getLikedPost)
 Router.post('/likepost/:id', jwtVerify, PostController.likepost);
 Router.post('/addcomment/:id', jwtVerify, PostController.addComment)
 Router.put('/editcomment/:id', jwtVerify, PostController.editComment)

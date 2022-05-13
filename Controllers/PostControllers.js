@@ -5,6 +5,45 @@ const { uploader } = require('../Helpers/Uploader')
 const fs = require('fs')
 
 module.exports = {
+    getLikedPost: (req,res) => { 
+        //   problem solve jangan rubah codingan ini
+            let id = req.dataToken.id
+            var postId = req.params.id;
+            var sql =`SELECT p.*, u.username, u.profileimage, count(l.userId) as totalLike
+            FROM posts p 
+            JOIN users u 
+            ON p.userId = u.id 
+            LEFT JOIN likes l 
+            ON p.id = l.postId 
+            GROUP BY p.id`;
+            db.query(sql, (err,results) => {
+                if(err) {
+                    // console.log(err)
+                    return res.status(500).send(err)
+                }
+                
+                var sql = `SELECT l.postId 
+                FROM users u 
+                JOIN likes l
+                ON l.userId = u.id
+                WHERE l.userId = ${id}`
+                db.query(sql, (err2,results2) => {
+                    if(err2) {
+                        // console.log(err)
+                        return res.status(500).send(err2)
+                    }
+                    var newArray = []
+                    for (let i = 0; i < results2.length; i++) {
+                        newArray.push(results2[i].postId)
+                    }
+            
+                    res.status(200).send({
+                        results: results,
+                        results2 : newArray
+                    })
+                })
+            })
+        },
     getData: (req, res) => {
         let id = req.dataToken.id
         var postId = req.params.id;
@@ -53,19 +92,6 @@ module.exports = {
                         likes : newArray,
                     })
                 })
-                // console.log(results2)
-                // var newArray = []
-                // for (let i = 0; i < results2.length; i++) {
-                //     newArray.push(
-                //         results2[i].userId, 
-                //         results2[i].comment, 
-                //         results2[i].username)
-                // }
-        
-                // res.status(200).send({
-                //     results: results,
-                //     results2 :results2
-                // })
             })
         });
     },
@@ -374,12 +400,24 @@ module.exports = {
                 VALUES (${results[0].id}, ${id}, '${comment}');`
                 console.log('sql user id', sql)
                 db.query(sql, (err2,results2) => {
-                    console.log('results2:', results2)
+                    
                     if(err2) {
                         console.log('err bawah2', err2)
                         return res.status(500).json({ message: "Server Error", error: err2.message });
                     }
-                    res.status(200).send(results2);
+                    console.log('results2:', results2)
+
+                    sqlNew = `SELECT * from comment where postId = ${postId};`
+                            console.log('sql user id', sqlNew)
+                            db.query(sqlNew, (err3,results3) => {
+                                
+                                if(err3) {
+                                    console.log('err bawah2', err3)
+                                    return res.status(500).json({ message: "Server Error", error: err3.message });
+                                }
+                                console.log('results3:', results3)
+                                res.status(200).send(results3);
+                            })
                 })
 
             }

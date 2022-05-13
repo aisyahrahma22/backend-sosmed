@@ -14,6 +14,9 @@ Router.post('/login', UserController.login)
 Router.post('/checkuserverify', jwtVerify, UserController.checkUserVerify)
 Router.post('/resend', jwtVerify, UserController.resend)
 Router.patch('/editprofiledata',  jwtVerify, UserController.editProfileData)
+Router.post('/resendpassword', UserController.resendPassword)
+Router.patch("/resetpassword", UserController.resetPassword);
+// Router.patch("/resetpass/:eail", UserController.resetPass);
 Router.get('/allusers', jwtVerify, UserController.getUsers)
 Router.get('/profileusers/:id', jwtVerify, UserController.getProfileUser)
 
