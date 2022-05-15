@@ -8,16 +8,16 @@ const UserController = require('./../Controllers/UserController')
 // Import JWT Verify
 const jwtVerify = require('./../Middleware/JWT')
 
-Router.post('/register', UserController.register)
-Router.patch('/confirmation', jwtVerify, UserController.confirmation)
+Router.post('/register', UserController.register)/
+Router.patch('/confirmation', jwtVerify, UserController.confirmation) 
 Router.post('/login', UserController.login)
 Router.post('/checkuserverify', jwtVerify, UserController.checkUserVerify)
 Router.post('/resend', jwtVerify, UserController.resend)
 Router.patch('/editprofiledata',  jwtVerify, UserController.editProfileData)
 Router.post('/resendpassword', UserController.resendPassword)
-Router.patch("/resetpassword", UserController.resetPassword);
-// Router.patch("/resetpass/:eail", UserController.resetPass);
+Router.patch("/resetpassword",  jwtVerify, UserController.resetPassword);
+Router.get('/gettoken', jwtVerify, UserController.getValidToken)
 Router.get('/allusers', jwtVerify, UserController.getUsers)
-Router.get('/profileusers/:id', jwtVerify, UserController.getProfileUser)
+Router.get('/profileusers/:id', jwtVerify, UserController.getProfileUser) 
 
 module.exports = Router

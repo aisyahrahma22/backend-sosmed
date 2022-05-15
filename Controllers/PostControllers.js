@@ -5,45 +5,171 @@ const { uploader } = require('../Helpers/Uploader')
 const fs = require('fs')
 
 module.exports = {
-    getLikedPost: (req,res) => { 
-        //   problem solve jangan rubah codingan ini
-            let id = req.dataToken.id
-            var postId = req.params.id;
-            var sql =`SELECT p.*, u.username, u.profileimage, count(l.userId) as totalLike
-            FROM posts p 
-            JOIN users u 
-            ON p.userId = u.id 
-            LEFT JOIN likes l 
-            ON p.id = l.postId 
-            GROUP BY p.id`;
-            db.query(sql, (err,results) => {
-                if(err) {
-                    // console.log(err)
-                    return res.status(500).send(err)
-                }
-                
-                var sql = `SELECT l.postId 
-                FROM users u 
-                JOIN likes l
-                ON l.userId = u.id
-                WHERE l.userId = ${id}`
-                db.query(sql, (err2,results2) => {
-                    if(err2) {
-                        // console.log(err)
-                        return res.status(500).send(err2)
-                    }
-                    var newArray = []
-                    for (let i = 0; i < results2.length; i++) {
-                        newArray.push(results2[i].postId)
-                    }
+    getPostUserbyId: async(req, res) => {
+        try {
+            let id = req.params.id
+            const likedPosts = []
             
-                    res.status(200).send({
-                        results: results,
-                        results2 : newArray
-                    })
-                })
+            const query0 = 'SELECT * FROM users WHERE id = ?'
+            const query0Result = await query(query0, [id])
+
+            const query1 = `SELECT * FROM posts WHERE userId = ? ORDER BY id DESC`
+            const posts = await query(query1, [query0Result[0].id])
+            
+            const query2 = `SELECT COUNT(*) userId FROM likes WHERE postId = ?`;
+            for (let i = 0; i < posts.length; i++) {
+                let resultLikes = await query(query2, posts[i].id);
+                posts[i] = { ...posts[i], totalLike: resultLikes[0].userId };
+            }
+
+            let query3 = `SELECT COUNT(*) id FROM comment WHERE postId = ?`;
+            for (let i = 0; i < posts.length; i++) {
+                let resultCommentsCount = await query(query3, [posts[i].id]);
+                posts[i] = { ...posts[i], comments: resultCommentsCount[0].id };
+            }
+            
+            res.status(200).send(posts)
+        } catch (error) {
+            res.status(400).send({
+                status: 400,
+                error: true,
+                message: error.message
             })
-        },
+        }
+    },
+    getProfilePost: async(req, res) => {
+        try {
+            let id = req.dataToken.id
+            const likedPosts = []
+            
+            const query0 = 'SELECT * FROM users WHERE id = ?'
+            const query0Result = await query(query0, [id])
+
+            const query1 = `SELECT * FROM posts WHERE userId = ? ORDER BY id DESC`
+            const posts = await query(query1, [query0Result[0].id])
+            
+            const query2 = `SELECT COUNT(*) userId FROM likes WHERE postId = ?`;
+            for (let i = 0; i < posts.length; i++) {
+                let resultLikes = await query(query2, posts[i].id);
+                posts[i] = { ...posts[i], totalLike: resultLikes[0].userId };
+            }
+
+            let query3 = `SELECT COUNT(*) id FROM comment WHERE postId = ?`;
+            for (let i = 0; i < posts.length; i++) {
+                let resultCommentsCount = await query(query3, [posts[i].id]);
+                posts[i] = { ...posts[i], comments: resultCommentsCount[0].id };
+            }
+            
+            res.status(200).send(posts)
+        } catch (error) {
+            res.status(400).send({
+                status: 400,
+                error: true,
+                message: error.message
+            })
+        }
+    },
+    getLikedPost: async(req, res) => {
+        try {
+            let id = req.dataToken.id
+            console.log(id)
+            const likedPost = []
+            let query1 = 'SELECT postId FROM likes WHERE userId = ? ORDER BY postId DESC;'
+            const query1Result = await query(query1, id)
+
+            console.log(query1)
+            console.log('ini query1Result.length',query1Result.length)
+    
+            let query2 = 'SELECT * FROM posts WHERE id = ?'
+            for(let i = 0; i < query1Result.length; i++){
+                const query2Result = await query(query2, [query1Result[i].postId])
+                likedPost.push( query2Result[0])
+                console.log('ini query2Result[0]', query2Result[0])
+            }
+
+            console.log(query2)
+    
+            let query3 = 'SELECT COUNT(*) FROM likes WHERE postId = ?'
+            for(let i = 0; i <  likedPost.length; i++){
+                const query3Result = await query(query3, likedPost[i].id)
+                likedPost[i] = {...likedPost[i], likes:  query3Result[0].userId}
+            }
+
+            console.log(query3)
+
+            let query4 = 'SELECT COUNT(*) userId FROM likes WHERE userId = ? AND postId = ?'
+            for(let i = 0; i <  likedPost.length; i++){
+                const query4Result = await query(query4, [id, likedPost[i].id])
+                likedPost[i] = {...likedPost[i], likes2:  query4Result[0].userId}
+            }
+            console.log(query4)
+            let query5 = `SELECT username FROM users WHERE id = ?`;
+            for (let i = 0; i < likedPost.length; i++) {
+                let query5Result = await query(query5, likedPost[i].userId);
+                likedPost[i] = { ...likedPost[i], username: query5Result[0].username };
+            }
+       
+         
+
+            // let query5 = 'SELECT username FROM users WHERE id = ?'
+            // for(let i = 0; i <  likedPost.length; i++){
+            //     const query5Result = await query(query5, [id, likedPost[i].userId])
+            //     likedPost[i] = {...likedPost[i], username: query5Result[0].username}
+            // }
+            console.log(query5)
+        
+            let query6 = 'SELECT profileimage FROM users WHERE id = ?'
+            for(let i = 0; i <  likedPost.length; i++){
+                const query6Result = await query(query6, likedPost[i].userId)
+                likedPost[i] = {...likedPost[i], profileimage: query6Result[0].profileimage}
+            }
+
+            console.log(query6)
+
+            res.status(200).send(likedPost)
+           
+        } catch (error) {
+            res.status(500).send({
+                error: true, 
+                message: error.message
+            })
+        }
+    },
+    getAllData: async(req, res) => {
+        try {
+            let id = req.dataToken.id
+
+            let query1 = `SELECT posts.*, users.username, users.profileimage as profilepicture
+            FROM posts
+            JOIN users 
+            ON posts.userId = users.id 
+            ORDER BY posts.id DESC`
+
+            const posts = await query(query1)
+            
+            let query2 = `SELECT COUNT(*) userId FROM likes WHERE postId = ?`;
+            for (let i = 0; i < posts.length; i++) {
+                let post = posts[i];
+                let resultLikes = await query(query2, post.id);
+                posts[i] = { ...posts[i], totalLike: resultLikes[0].userId };
+            }
+
+            let query3 = `SELECT COUNT(*) userId FROM likes WHERE userId = ? AND postId = ?`;
+            for (let i = 0; i < posts.length; i++) {
+                let post = posts[i];
+                let resultIsLiked = await query(query3, [id, post.id]);
+                posts[i] = { ...posts[i], myLike: resultIsLiked[0].userId };
+            }
+            
+            res.status(200).send(posts)
+        } catch (error) {
+            res.status(400).send({
+                status: 400,
+                error: true,
+                message: error.message
+            })
+        }
+    },
     getData: (req, res) => {
         let id = req.dataToken.id
         var postId = req.params.id;
