@@ -19,5 +19,6 @@ Router.patch("/resetpassword",  jwtVerify, UserController.resetPassword);
 Router.get('/gettoken', jwtVerify, UserController.getValidToken)
 Router.get('/allusers', jwtVerify, UserController.getUsers)
 Router.get('/profileusers/:id', jwtVerify, UserController.getProfileUser) 
+Router.get('/userverify', jwtVerify, UserController.getUserVerify) 
 
 module.exports = Router
