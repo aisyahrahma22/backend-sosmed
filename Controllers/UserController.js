@@ -33,6 +33,8 @@ module.exports = {
             await hmac.update(data.password)
             const passwordHashed = await hmac.digest('hex')
             data.password = passwordHashed
+            data.displayname = data.username
+            // data.profileimage = 'Public/default/default.jpg'
         
             let query01 = 'SELECT * FROM users WHERE username = ?'
             const findUsername = await query(query01, data.username)
@@ -346,19 +348,22 @@ module.exports = {
     
                     try {
                         if(imagePath) {
-                            data.profileimage = imagePath;                        
+                            data.profileimage = imagePath;   
+                            console.log('ini imagePath', imagePath)                     
                         }
+                        
                         sql = `Update users set ? where id = ${id};`
                         db.query(sql,data, (err1,results1) => {
+                            console.log('ini results1', results1)
                             if(err1) {
                                 if(imagePath) {
                                     fs.unlinkSync('' + imagePath);
                                 }
                                 return res.status(500).json({ message: "Server Error", error: err1.message });
                             }
-                            if(imagePath) {
-                                fs.unlinkSync('' + results[0].profileimage);
-                            }
+                            // if(imagePath) {
+                            //     fs.unlinkSync('' + results[0].profileimage);
+                            // }
                             
                             sql = `SELECT u.id,u.username, u.displayname, u.profileimage,u.bio
                                     FROM users u

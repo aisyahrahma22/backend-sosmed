@@ -333,12 +333,20 @@ module.exports = {
                 const data = JSON.parse(req.body.data);
                 data.image = imagePath;
                 data.userId = id;
+        
+                
                 var sql = 'INSERT INTO posts SET ?';
                 db.query(sql, data, (err, results) => {
                     if(err) {
                         fs.unlinkSync('./Public' + imagePath);
                         return res.status(500).json({ message: "Server Error", error: err.message });
-                    }     
+                    } 
+
+                    // if(data.caption === ''){
+                    // return res.status(500).json({ message: "Image or Caption Empty", error: err.message });
+                    // }
+                    
+                    console.log('ini result uploud',results)
 
                     sql = `SELECT * from posts where userId = ${id};`;
                     db.query(sql, id, (err, results) => {
