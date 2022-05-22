@@ -2,7 +2,7 @@ const { Route } = require('express')
 const express = require('express')
 const Router = express.Router()
 
-// Import Controller Todos
+// Import Controller 
 const PostController = require('./../Controllers/PostControllers')
 
 // Import JWT Verify

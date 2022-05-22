@@ -33,8 +33,6 @@ module.exports = {
             await hmac.update(data.password)
             const passwordHashed = await hmac.digest('hex')
             data.password = passwordHashed
-            data.displayname = data.username
-            // data.profileimage = 'Public/default/default.jpg'
         
             let query01 = 'SELECT * FROM users WHERE username = ?'
             const findUsername = await query(query01, data.username)
@@ -451,8 +449,8 @@ module.exports = {
             try {
                 if(err) throw err
 
-                console.log(err)
-                console.log(result)
+                console.log('ini error',err)
+                console.log('ini result', result)
                 if(result.length === 1){
                     let email = result[0].email
                     let id = result[0].id
@@ -513,7 +511,10 @@ module.exports = {
                     })
                 }
             } catch (error) {
-                console.log(error)                
+                res.status(500).send({
+                    error: true, 
+                    message:'Account not found'
+                })           
             }
         })
     },
